@@ -11,12 +11,12 @@ This repository contains groundbreaking research proposing that reality is funda
 ## Repository Contents
 
 ### Core Papers
-- **[Paper 1: Theoretical Framework](paper1.md)** - The complete dimensional consciousness theory and prime-π vortex mathematics
-- **[Paper 2: Experimental Evidence](paper2.md)** - How the theory explains real quantum anomalies like Klein tunneling, magic-angle superconductivity, and quantum Hall precision
+- **[Paper 1: Theoretical Framework](Temporal%20Flow%20Field%20Theory%202.0.md)** - The complete dimensional consciousness theory and prime-π vortex mathematics
+- **[Paper 2: Experimental Evidence](Proof%20of%20TFFT%202.0.md)** - How the theory explains real quantum anomalies like Klein tunneling, magic-angle superconductivity, and quantum Hall precision
 - **Paper 3: Predictions & Applications** *(Coming Soon)* - Practical applications including room-temperature superconductors
 
 ### Visualizations
-- **[4D Helix Visualization](4d_helix_threejs.html)** - Interactive 3D representation of 4D vortex electron behavior
+- **[Prediction of shape of a 4D Graphine superconductor](4d_helix_threejs.html)** - Interactive 3D representation of 4D vortex electron behavior
 - **Graphene Superconductor Vortex** *(Coming Soon)* - Visual demonstration of geometric alignment in twisted bilayer graphene
 
 ## The Revolutionary Insight
