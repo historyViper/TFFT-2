@@ -125,6 +125,22 @@ This repository represents preliminary theoretical work requiring extensive math
 
 ## License
 
+**Personal and Academic Use License**
+
+This work is freely available for:
+- Personal experimentation and research
+- Academic study and non-commercial research
+- Educational purposes
+- Individual learning and development
+
+**Commercial Use:**
+Any commercial application, manufacturing, or profit-making use requires explicit written permission from the author. Contact [your email] for commercial licensing discussions.
+
+**No Warranty:**
+This work is provided "as is" without warranty of any kind. Use at your own risk.
+
+---
+*This research is shared to advance human knowledge and benefit humanity broadly.*
 This work is shared openly to advance human understanding. Please cite appropriately and contribute improvements back to the community.
 
 ---
