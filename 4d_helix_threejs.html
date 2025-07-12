@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Helix Stereographic Projection</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 8px;
+            color: white;
+            font-size: 12px;
+        }
+        .control-group {
+            margin: 8px 0;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            font-size: 11px;
+        }
+        input[type="range"] {
+            width: 100px;
+        }
+        input[type="number"] {
+            width: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #555;
+            color: white;
+            padding: 2px;
+        }
+        #info {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: #888;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="controls">
+            <div class="control-group">
+                <label>3D Radius (r):</label>
+                <input type="range" id="r" min="0.1" max="3" step="0.1" value="1.0">
+                <input type="number" id="r-val" min="0.1" max="3" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+                <label>4D Radius (R):</label>
+                <input type="range" id="R" min="0.1" max="2" step="0.1" value="0.5">
+                <input type="number" id="R-val" min="0.1" max="2" step="0.1" value="0.5">
+            </div>
+            <div class="control-group">
+                <label>Frequency ω:</label>
+                <input type="range" id="omega" min="0.1" max="5" step="0.1" value="2.0">
+                <input type="number" id="omega-val" min="0.1" max="5" step="0.1" value="2.0">
+            </div>
+            <div class="control-group">
+                <label>Frequency Ω:</label>
+                <input type="range" id="Omega" min="0.1" max="3" step="0.1" value="1.0">
+                <input type="number" id="Omega-val" min="0.1" max="3" step="0.1" value="1.0">
+            </div>
+            <div class="control-group">
+                <label>Linear Speed (v):</label>
+                <input type="range" id="v" min="0.01" max="0.5" step="0.01" value="0.1">
+                <input type="number" id="v-val" min="0.01" max="0.5" step="0.01" value="0.1">
+            </div>
+            <div class="control-group">
+                <label>Time Range:</label>
+                <input type="range" id="timeRange" min="5" max="50" step="5" value="20">
+                <input type="number" id="timeRange-val" min="5" max="50" step="5" value="20">
+            </div>
+            <div class="control-group">
+                <label>Points:</label>
+                <input type="range" id="points" min="500" max="3000" step="100" value="1000">
+                <input type="number" id="points-val" min="500" max="3000" step="100" value="1000">
+            </div>
+        </div>
+        <div id="info">
+            Mouse: Rotate | Wheel: Zoom | Right-click: Pan<br>
+            3D Shadow of a 4D Vortex Electron via Stereographic Projection
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, controls, helix;
+        let animationId;
+
+        // Parameters
+        let params = {
+            r: 1.0,
+            R: 0.5,
+            omega: 2.0,
+            Omega: 1.0,
+            v: 0.1,
+            timeRange: 20,
+            points: 1000
+        };
+
+        function init() {
+            // Scene setup
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000511);
+
+            // Camera setup
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+
+            // Renderer setup
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // Simple orbit controls implementation
+            setupControls();
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.3);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(10, 10, 10);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+
+            // Add coordinate axes
+            const axesHelper = new THREE.AxesHelper(2);
+            scene.add(axesHelper);
+
+            // Create initial helix
+            createHelix();
+
+            // Setup controls
+            setupControlInputs();
+
+            // Start animation
+            animate();
+        }
+
+        function setupControls() {
+            let isMouseDown = false;
+            let mouseButton = null;
+            let mouseX = 0, mouseY = 0;
+            let targetRotationX = 0, targetRotationY = 0;
+            let targetZoom = 10;
+            let targetPanX = 0, targetPanY = 0;
+
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                isMouseDown = true;
+                mouseButton = e.button;
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (!isMouseDown) return;
+
+                const deltaX = e.clientX - mouseX;
+                const deltaY = e.clientY - mouseY;
+
+                if (mouseButton === 0) { // Left click - rotate
+                    targetRotationY += deltaX * 0.01;
+                    targetRotationX += deltaY * 0.01;
+                } else if (mouseButton === 2) { // Right click - pan
+                    targetPanX += deltaX * 0.01;
+                    targetPanY -= deltaY * 0.01;
+                }
+
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+
+            renderer.domElement.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+
+            renderer.domElement.addEventListener('wheel', (e) => {
+                targetZoom += e.deltaY * 0.01;
+                targetZoom = Math.max(2, Math.min(50, targetZoom));
+            });
+
+            renderer.domElement.addEventListener('contextmenu', (e) => {
+                e.preventDefault();
+            });
+
+            function updateCamera() {
+                camera.position.x = targetZoom * Math.sin(targetRotationY) * Math.cos(targetRotationX) + targetPanX;
+                camera.position.y = targetZoom * Math.sin(targetRotationX) + targetPanY;
+                camera.position.z = targetZoom * Math.cos(targetRotationY) * Math.cos(targetRotationX);
+                camera.lookAt(targetPanX, targetPanY, 0);
+            }
+
+            controls = { update: updateCamera };
+        }
+
+        function createHelix() {
+            // Remove existing helix
+            if (helix) {
+                scene.remove(helix);
+            }
+
+            // Generate 4D helix points
+            const points = [];
+            const colors = [];
+            const { r, R, omega, Omega, v, timeRange, points: numPoints } = params;
+
+            for (let i = 0; i < numPoints; i++) {
+                const t = (i / (numPoints - 1)) * timeRange;
+
+                // 4D Helix coordinates
+                const x = r * Math.cos(omega * t);
+                const y = r * Math.sin(omega * t);
+                const z = v * t;
+                const w = R * Math.cos(Omega * t);
+
+                // Stereographic projection to 3D
+                const denominator = 1 - w;
+                
+                // Avoid division by zero
+                if (Math.abs(denominator) > 0.001) {
+                    const x_proj = x / denominator;
+                    const y_proj = y / denominator;
+                    const z_proj = z / denominator;
+
+                    // Clamp extreme values to keep visualization reasonable
+                    const maxVal = 20;
+                    if (Math.abs(x_proj) < maxVal && Math.abs(y_proj) < maxVal && Math.abs(z_proj) < maxVal) {
+                        points.push(new THREE.Vector3(x_proj, y_proj, z_proj));
+                        
+                        // Color based on 4D coordinate and time
+                        const hue = (t / timeRange + (w + R) / (2 * R)) % 1;
+                        const color = new THREE.Color().setHSL(hue, 0.8, 0.6);
+                        colors.push(color.r, color.g, color.b);
+                    }
+                }
+            }
+
+            // Create geometry
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+
+            // Create material
+            const material = new THREE.LineBasicMaterial({ 
+                vertexColors: true,
+                linewidth: 2
+            });
+
+            // Create line
+            helix = new THREE.Line(geometry, material);
+            scene.add(helix);
+
+            // Add some particles for extra visual effect
+            createParticles(points);
+        }
+
+        function createParticles(points) {
+            const particleGeometry = new THREE.BufferGeometry();
+            const particlePositions = [];
+            const particleColors = [];
+
+            // Sample some points for particles
+            for (let i = 0; i < points.length; i += 10) {
+                const point = points[i];
+                particlePositions.push(point.x, point.y, point.z);
+                
+                const intensity = Math.sin(i * 0.1) * 0.5 + 0.5;
+                particleColors.push(0.5 + intensity * 0.5, 0.3 + intensity * 0.3, 1.0);
+            }
+
+            particleGeometry.setAttribute('position', new THREE.Float32BufferAttribute(particlePositions, 3));
+            particleGeometry.setAttribute('color', new THREE.Float32BufferAttribute(particleColors, 3));
+
+            const particleMaterial = new THREE.PointsMaterial({
+                size: 0.1,
+                vertexColors: true,
+                transparent: true,
+                opacity: 0.6
+            });
+
+            const particles = new THREE.Points(particleGeometry, particleMaterial);
+            scene.add(particles);
+        }
+
+        function setupControlInputs() {
+            const inputs = ['r', 'R', 'omega', 'Omega', 'v', 'timeRange', 'points'];
+            
+            inputs.forEach(param => {
+                const slider = document.getElementById(param);
+                const numberInput = document.getElementById(param + '-val');
+                
+                slider.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    params[param] = value;
+                    numberInput.value = value;
+                    createHelix();
+                });
+                
+                numberInput.addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    params[param] = value;
+                    slider.value = value;
+                    createHelix();
+                });
+            });
+        }
+
+        function animate() {
+            animationId = requestAnimationFrame(animate);
+            
+            if (controls) {
+                controls.update();
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize);
+        
+        // Initialize
+        init();
+    </script>
+</body>
+</html>
