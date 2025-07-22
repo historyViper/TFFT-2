@@ -134,7 +134,7 @@ This work is freely available for:
 - Individual learning and development
 
 **Commercial Use:**
-Any commercial application, manufacturing, or profit-making use requires explicit written permission from the author. Contact [your email] for commercial licensing discussions.
+Any commercial application, manufacturing, or profit-making use requires explicit written permission from the author. Contact: Mr. Richardson via HistoryViper@Gmail.com for commercial licensing discussions.
 
 **No Warranty:**
 This work is provided "as is" without warranty of any kind. Use at your own risk.
