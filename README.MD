@@ -63,7 +63,7 @@ If you reference this work in academic or public research, please cite:
 > Available at: https://github.com/HistoryViper/TFFT
 
 BibTeX:
-```bibtex
+bibtex
 @misc{Richardson2025TFFT,
   author       = {Jason Richardson},
   title        = {Temporal-Flow Field Theory (TFFT): Unified Framework for Quantum and Cosmological Dynamics},
