@@ -1,4 +1,4 @@
-# Dimensional Consciousness and Prime-π Vortex Theory: A Unified Framework for Reality
+# TFFT and Prime-π Vortex Theory: A Unified Framework for Reality
 
 ## Abstract
 
