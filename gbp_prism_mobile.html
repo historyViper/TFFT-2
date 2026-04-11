@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>GBP Prism</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=VT323&family=Barlow+Condensed:wght@300;400;600&display=swap');
+
+  :root {
+    --bg: #06080f;
+    --panel: #0a0d18;
+    --border: #1a2238;
+    --gold: #d4a843;
+    --dim: #2a3850;
+    --text: #8aaccc;
+    --white: #dde8f8;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── HEADER ── */
+  header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+    z-index: 10;
+  }
+
+  .h-title {
+    font-family: 'VT323', monospace;
+    font-size: 1.3rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    line-height: 1;
+  }
+
+  .h-sub {
+    font-size: 0.6rem;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+    line-height: 1;
+    margin-top: 2px;
+  }
+
+  .h-lu {
+    font-family: 'VT323', monospace;
+    font-size: 0.85rem;
+    color: var(--dim);
+    text-align: right;
+    line-height: 1.4;
+  }
+  .h-lu b { color: var(--gold); }
+
+  /* ── VIEW TABS ── */
+  .tabs {
+    flex-shrink: 0;
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    flex-shrink: 0;
+    padding: 8px 14px;
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--dim);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+  }
+  .tab.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  /* ── CANVAS AREA ── */
+  .canvas-wrap {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    min-height: 0;
+  }
+
+  canvas {
+    display: block;
+    touch-action: none;
+    max-width: 100%;
+    max-height: 100%;
+  }
+
+  /* ── BOTTOM PANEL ── */
+  .bottom {
+    flex-shrink: 0;
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    max-height: 38vh;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  .bottom::-webkit-scrollbar { display: none; }
+
+  /* ── CONTROLS ROW ── */
+  .ctrl-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ctrl-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    white-space: nowrap;
+    width: 72px;
+    flex-shrink: 0;
+  }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 3px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--gold);
+    cursor: pointer;
+  }
+
+  .ctrl-val {
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    color: var(--gold);
+    width: 42px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── PATH TABLE ── */
+  .path-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    margin: 0;
+  }
+
+  .path-cell {
+    background: var(--panel);
+    padding: 7px 6px;
+    cursor: pointer;
+    transition: background 0.1s;
+    text-align: center;
+  }
+  .path-cell:active { background: rgba(212,168,67,0.08); }
+  .path-cell.selected { background: rgba(212,168,67,0.1); }
+
+  .pc-r {
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+    line-height: 1;
+  }
+
+  .pc-sin2 {
+    font-size: 0.58rem;
+    color: var(--dim);
+    line-height: 1.3;
+    letter-spacing: 0.06em;
+  }
+
+  .pc-bar {
+    height: 3px;
+    border-radius: 1px;
+    margin-top: 4px;
+  }
+
+  /* ── ANIM BUTTON ── */
+  .anim-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+    color: var(--gold);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 4px 14px;
+    cursor: pointer;
+    letter-spacing: 0.1em;
+    z-index: 5;
+  }
+  .anim-btn.on { border-color: var(--gold); background: rgba(212,168,67,0.1); }
+
+  /* ── INFO OVERLAY ── */
+  .info-bar {
+    padding: 6px 14px;
+    font-family: 'VT323', monospace;
+    font-size: 0.85rem;
+    color: var(--dim);
+    border-bottom: 1px solid var(--border);
+    line-height: 1.5;
+  }
+  .info-bar b { color: var(--gold); }
+  .info-bar .em { color: #00e5ff; }
+  .info-bar .gr { color: #00ff9d; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="h-title">GBP PRISM</div>
+    <div class="h-sub">Wilson Loop Spectral Separation</div>
+  </div>
+  <div class="h-lu">
+    LU = <b id="hLU">—</b><br>
+    GEO_B = <b id="hGEOB">—</b>
+  </div>
+</header>
+
+<div class="tabs">
+  <div class="tab active" onclick="setView('prism')">Prism Split</div>
+  <div class="tab" onclick="setView('spectrum')">Spectrum</div>
+  <div class="tab" onclick="setView('riemann')">Riemann</div>
+  <div class="tab" onclick="setView('snell')">Snell/GBP</div>
+</div>
+
+<div class="canvas-wrap">
+  <canvas id="c"></canvas>
+  <button class="anim-btn" id="animBtn" onclick="toggleAnim()">▶ PLAY</button>
+</div>
+
+<div class="bottom">
+
+  <div class="info-bar" id="infoBar">
+    <b>8 Wilson loop paths</b> · sin²(r·π/15) governs exit angle · <span class="gr">gaps = forbidden modes</span>
+  </div>
+
+  <div class="ctrl-row">
+    <span class="ctrl-label">θ incident</span>
+    <input type="range" id="slAngle" min="5" max="75" value="30" oninput="setAngle(+this.value)">
+    <span class="ctrl-val" id="vAngle">30°</span>
+  </div>
+
+  <div class="ctrl-row">
+    <span class="ctrl-label">prism n₂</span>
+    <input type="range" id="slN2" min="100" max="250" value="150" oninput="setN2(+this.value/100)">
+    <span class="ctrl-val" id="vN2">1.50</span>
+  </div>
+
+  <div class="path-grid" id="pathGrid"></div>
+
+</div>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+
+// ── Real GBP constants ─────────────────────────────────────────
+const PI = Math.PI;
+const GEO_B    = Math.sin(PI/15)**2;
+const ALPHA_IR = 0.848809;
+const LU       = GEO_B / ALPHA_IR;
+const PHI      = (1+Math.sqrt(5))/2;
+
+document.getElementById('hLU').textContent    = LU.toFixed(5);
+document.getElementById('hGEOB').textContent  = GEO_B.toFixed(5);
+
+const LANE_R = [1,7,11,13,17,19,23,29];
+
+const PATHS = LANE_R.map((r,i) => {
+  const sin2  = Math.sin(r*PI/15)**2;
+  const hue   = Math.round(260 - sin2*220);
+  const zeta  = 1/Math.sqrt(r);
+  return { r, sin2, hue, zeta, color:`hsl(${hue},88%,62%)` };
+});
+
+// Riemann zeros (first 20 imaginary parts)
+const ZEROS = [14.135,21.022,25.011,30.425,32.935,37.586,40.919,43.327,
+               48.005,49.774,52.970,56.446,59.347,60.832,65.113,67.080,
+               69.546,72.067,75.705,77.145];
+
+let incidentAngle = 30;
+let n2 = 1.50;
+let phase = 0;
+let animating = false;
+let animT = 0;
+let viewMode = 'prism';
+let selectedPath = -1;
+let W, H;
+
+// ── Resize canvas to fill container ───────────────────────────
+function resize() {
+  const wrap = canvas.parentElement;
+  W = wrap.clientWidth;
+  H = wrap.clientHeight;
+  canvas.width  = W;
+  canvas.height = H;
+  render();
+}
+window.addEventListener('resize', resize);
+
+// ── Build path grid ────────────────────────────────────────────
+function buildGrid() {
+  const grid = document.getElementById('pathGrid');
+  PATHS.forEach((p,i) => {
+    const cell = document.createElement('div');
+    cell.className = 'path-cell';
+    cell.id = `pc${i}`;
+    cell.onclick = () => selectPath(i);
+    const barPct = (p.sin2*100).toFixed(0);
+    cell.innerHTML = `
+      <div class="pc-r" style="color:${p.color}">r=${p.r}</div>
+      <div class="pc-sin2">${p.sin2.toFixed(4)}</div>
+      <div class="pc-bar" style="width:${barPct}%;background:${p.color};margin:0 auto"></div>`;
+    grid.appendChild(cell);
+  });
+}
+
+function selectPath(i) {
+  selectedPath = i;
+  document.querySelectorAll('.path-cell').forEach((c,j) =>
+    c.classList.toggle('selected', j===i));
+  const p = PATHS[i];
+  const exitDeg = computeExit(p.sin2, incidentAngle, n2);
+  const info = document.getElementById('infoBar');
+  info.innerHTML = `<b>r=${p.r}</b> · sin²=${p.sin2.toFixed(4)} · ζ=${p.zeta.toFixed(3)} · `+
+    `<span class="em">θ_exit=${isNaN(exitDeg)?'TIR':exitDeg.toFixed(2)+'°'}</span> · `+
+    `E=${(p.sin2*100).toFixed(1)}% · <span style="color:${p.color}">${hueToName(p.hue)}</span>`;
+  if (!animating) render();
+}
+
+function hueToName(h) {
+  if (h>240) return 'UV/violet';
+  if (h>200) return 'blue';
+  if (h>160) return 'cyan';
+  if (h>120) return 'green';
+  if (h>80)  return 'yellow';
+  if (h>50)  return 'orange';
+  return 'red';
+}
+
+// ── Physics ────────────────────────────────────────────────────
+function computeExit(sin2, thetaIn, n) {
+  const nEff = n * (1 + sin2 * LU * 3);
+  const sinOut = Math.sin(thetaIn*PI/180) / nEff;
+  if (Math.abs(sinOut)>1) return NaN;
+  return Math.asin(sinOut)*180/PI;
+}
+
+// ── Drawing helpers ────────────────────────────────────────────
+function clearBg() {
+  ctx.fillStyle = '#04060c';
+  ctx.fillRect(0,0,W,H);
+  ctx.fillStyle = 'rgba(26,34,56,0.4)';
+  for (let x=0;x<W;x+=28) for (let y=0;y<H;y+=28) ctx.fillRect(x,y,1,1);
+}
+
+// ── VIEW: PRISM ────────────────────────────────────────────────
+function drawPrism(ph) {
+  clearBg();
+  const cx = W*0.42, cy = H*0.45;
+  const pw = Math.min(W*0.18, 80);
+  const ph2 = Math.min(H*0.38, 130);
+
+  // Prism triangle
+  const p1={x:cx,      y:cy-ph2*0.6};
+  const p2={x:cx-pw,   y:cy+ph2*0.4};
+  const p3={x:cx+pw,   y:cy+ph2*0.4};
+
+  ctx.beginPath();
+  ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.lineTo(p3.x,p3.y); ctx.closePath();
+  ctx.fillStyle='rgba(180,210,255,0.04)'; ctx.fill();
+  ctx.strokeStyle='rgba(180,210,255,0.5)'; ctx.lineWidth=1.5; ctx.stroke();
+
+  ctx.font=`${Math.max(10,W*0.025)}px VT323`;
+  ctx.fillStyle='rgba(180,210,255,0.4)';
+  ctx.fillText('PRISM', cx-18, cy+ph2*0.4+16);
+
+  // Entry point
+  const entryX = cx-pw*0.4, entryY = cy-ph2*0.1;
+  const exitX  = cx+pw*0.5, exitY  = cy+ph2*0.05;
+
+  // Incident white beam
+  const incLen = Math.min(W*0.25, 100);
+  ctx.beginPath();
+  ctx.moveTo(entryX-incLen, entryY);
+  ctx.lineTo(entryX, entryY);
+  ctx.strokeStyle='rgba(255,255,255,0.7)'; ctx.lineWidth=3; ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(entryX-incLen, entryY); ctx.lineTo(entryX, entryY);
+  ctx.strokeStyle='rgba(255,255,255,0.1)'; ctx.lineWidth=10; ctx.stroke();
+
+  ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+  ctx.fillStyle='rgba(255,255,255,0.5)';
+  ctx.fillText('white', entryX-incLen+2, entryY-8);
+  ctx.fillText(`θ=${incidentAngle}°`, entryX-incLen+2, entryY+16);
+
+  // Internal ray
+  ctx.beginPath();
+  ctx.moveTo(entryX,entryY); ctx.lineTo(exitX,exitY);
+  ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.lineWidth=1.5;
+  ctx.setLineDash([4,4]); ctx.stroke(); ctx.setLineDash([]);
+
+  // Exit rays per path — fan spread derived from sin²(r·π/15)
+  // Mirror pairs have same sin² but different r → give them
+  // opposite angular offsets so they always visually separate
+  const rayLen = Math.min(W*0.38, 170);
+
+  // Build sorted fan: map each path to a unique fan angle
+  // sin² values: [0.043, 0.043, 0.165, 0.165, 0.552, 0.552, 0.989, 0.989]
+  // We fan them by INDEX position (0-7) mapped to angular spread
+  // so mirror pairs (same sin²) get adjacent but distinct angles
+  const fanMin = -38, fanMax = 38; // total fan spread in degrees
+  const baseAngle = 15; // exit base angle from horizontal
+
+  PATHS.forEach((p,i) => {
+    // Fan position: evenly spaced across full spread
+    const fanFrac = i / (PATHS.length - 1); // 0 to 1
+    const fanDeg  = fanMin + fanFrac * (fanMax - fanMin);
+    const angle   = (baseAngle + fanDeg) * PI / 180;
+
+    const ex = exitX + rayLen * Math.cos(angle);
+    const ey = exitY + rayLen * Math.sin(angle);
+
+    // Glow
+    ctx.beginPath(); ctx.moveTo(exitX,exitY); ctx.lineTo(ex,ey);
+    ctx.strokeStyle=p.color; ctx.lineWidth=7; ctx.globalAlpha=0.08; ctx.stroke();
+    // Main
+    ctx.beginPath(); ctx.moveTo(exitX,exitY); ctx.lineTo(ex,ey);
+    ctx.strokeStyle=p.color; ctx.lineWidth=selectedPath===i?3:2;
+    ctx.globalAlpha=selectedPath===i?1:0.85; ctx.stroke();
+    ctx.globalAlpha=1;
+
+    // Traveling dot
+    const t = (ph+i*0.45)%(2*PI);
+    const tp = (Math.sin(t)+1)/2;
+    const dx=exitX+(ex-exitX)*tp, dy=exitY+(ey-exitY)*tp;
+    ctx.beginPath(); ctx.arc(dx,dy,selectedPath===i?5:3,0,2*PI);
+    ctx.fillStyle=p.color; ctx.fill();
+    // Dot glow
+    ctx.beginPath(); ctx.arc(dx,dy,selectedPath===i?10:6,0,2*PI);
+    ctx.fillStyle=p.color.replace('62%','62%').replace('hsl','hsla').replace(')',',0.15)');
+    ctx.fill();
+
+    // Label at ray end
+    ctx.font=`${Math.max(9,W*0.024)}px VT323`;
+    ctx.fillStyle=p.color; ctx.globalAlpha=0.9;
+    const labelX = ex + (angle > PI/2 ? -32 : 4);
+    ctx.fillText(`r=${p.r}`, labelX, ey + (i<4?-4:10));
+    // sin² value for selected
+    if (selectedPath===i) {
+      ctx.font=`${Math.max(8,W*0.020)}px VT323`;
+      ctx.fillText(p.sin2.toFixed(4), labelX, ey + (i<4?-16:22));
+    }
+    ctx.globalAlpha=1;
+  });
+
+  // Dots at entry/exit
+  [entryX,exitX].forEach((x,j)=>{
+    const y=j===0?entryY:exitY;
+    ctx.beginPath(); ctx.arc(x,y,4,0,2*PI);
+    ctx.fillStyle='rgba(255,255,255,0.4)'; ctx.fill();
+  });
+
+  // Bottom formula
+  ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+  ctx.fillStyle='rgba(212,168,67,0.6)';
+  ctx.fillText('θ_exit(r) ∝ sin²(r·π/15)', 10, H-20);
+  ctx.fillStyle='rgba(42,56,80,0.9)';
+  ctx.fillText('derived — not fitted', 10, H-6);
+}
+
+// ── VIEW: SPECTRUM ─────────────────────────────────────────────
+function drawSpectrum(ph) {
+  clearBg();
+  const pad=12, baseY=H-50, maxBarH=H-100;
+  const bw = Math.floor((W-pad*2)/8);
+
+  PATHS.forEach((p,i) => {
+    const x=pad+i*bw;
+    const bw2=bw-4;
+    const osc=1+0.07*Math.sin(ph*p.zeta*2+i);
+    const barH=p.sin2*maxBarH*osc;
+    const y=baseY-barH;
+
+    const grad=ctx.createLinearGradient(x,y,x,baseY);
+    grad.addColorStop(0,p.color);
+    grad.addColorStop(1,p.color.replace('62%','15%'));
+    ctx.fillStyle=grad; ctx.globalAlpha=selectedPath===i?1:0.8;
+    ctx.fillRect(x+2,y,bw2,barH); ctx.globalAlpha=1;
+    ctx.fillStyle=p.color; ctx.fillRect(x+2,y,bw2,2);
+
+    // Glow on top cap
+    ctx.shadowColor=p.color; ctx.shadowBlur=10;
+    ctx.fillStyle=p.color; ctx.fillRect(x+2,y,bw2,2);
+    ctx.shadowBlur=0;
+
+    // Mirror pair bracket
+    if (i<4) {
+      const mi=7-i, mx=pad+mi*bw;
+      ctx.strokeStyle='rgba(212,168,67,0.15)'; ctx.lineWidth=1;
+      ctx.setLineDash([2,4]);
+      ctx.beginPath();
+      ctx.moveTo(x+bw2/2+2,y-6); ctx.lineTo(mx+bw2/2+2,y-6);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    ctx.font=`${Math.max(11,W*0.03)}px VT323`;
+    ctx.fillStyle=selectedPath===i?p.color:'rgba(138,172,204,0.8)';
+    ctx.fillText(`r=${p.r}`, x+2, baseY+14);
+    ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+    ctx.fillStyle='rgba(42,56,80,0.9)';
+    ctx.fillText(p.sin2.toFixed(3), x+1, baseY+26);
+  });
+
+  ctx.strokeStyle='rgba(26,34,56,0.8)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pad,20); ctx.lineTo(pad,baseY+2); ctx.lineTo(W-pad,baseY+2); ctx.stroke();
+
+  ctx.font=`${Math.max(10,W*0.025)}px VT323`;
+  ctx.fillStyle='rgba(212,168,67,0.6)';
+  ctx.fillText('sin²(r·π/15) — real GBP constants', pad+2, 16);
+  ctx.fillStyle='rgba(42,56,80,0.9)';
+  ctx.fillText('mirror pairs = photon L=R self-duality', pad+2, H-34);
+}
+
+// ── VIEW: RIEMANN ──────────────────────────────────────────────
+function drawRiemann(ph) {
+  clearBg();
+  const pL=50,pR=W-40,pT=30,pB=H-40;
+  const pW=pR-pL, pH2=pB-pT;
+  const zMin=10,zMax=80;
+
+  ctx.strokeStyle='rgba(26,34,56,0.8)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(pL,pT); ctx.lineTo(pL,pB); ctx.lineTo(pR,pB); ctx.stroke();
+
+  // Critical line
+  ctx.strokeStyle='rgba(212,168,67,0.2)'; ctx.lineWidth=1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath(); ctx.moveTo(pL+pW*0.5,pT); ctx.lineTo(pL+pW*0.5,pB); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+  ctx.fillStyle='rgba(212,168,67,0.5)';
+  ctx.fillText('½', pL+pW*0.5-4, pT-4);
+
+  // Riemann zeros
+  ZEROS.forEach((z,i)=>{
+    const y=pB-(z-zMin)/(zMax-zMin)*pH2;
+    const pulse=0.4+0.5*Math.sin(ph*0.5+i*0.3);
+    ctx.strokeStyle=`rgba(255,45,138,${0.2+pulse*0.35})`;
+    ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pL,y); ctx.lineTo(pR,y); ctx.stroke();
+    if (i<10) {
+      ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+      ctx.fillStyle=`rgba(255,45,138,${0.4+pulse*0.3})`;
+      ctx.fillText(`γ${i+1}=${z.toFixed(1)}`, pL+3, y-2);
+    }
+  });
+
+  // GBP mode lines
+  PATHS.forEach((p,i)=>{
+    const mappedZ = 10+p.sin2*70;
+    const y=pB-(mappedZ-zMin)/(zMax-zMin)*pH2;
+    ctx.strokeStyle=p.color; ctx.lineWidth=selectedPath===i?2.5:1.5;
+    ctx.globalAlpha=selectedPath===i?1:0.75;
+    ctx.beginPath(); ctx.moveTo(pL+pW*0.25,y); ctx.lineTo(pL+pW*0.75,y); ctx.stroke();
+    ctx.globalAlpha=1;
+    const cx2=pL+pW*0.5;
+    ctx.beginPath(); ctx.arc(cx2,y,selectedPath===i?5:3,0,2*PI);
+    ctx.fillStyle=p.color; ctx.fill();
+    ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+    ctx.fillStyle=p.color;
+    ctx.fillText(`r=${p.r}`, pR+3, y+4);
+  });
+
+  ctx.font=`${Math.max(10,W*0.025)}px VT323`;
+  ctx.fillStyle='rgba(255,45,138,0.6)';
+  ctx.fillText('— Riemann zeros', pL+2, pT+14);
+  ctx.fillStyle='rgba(138,172,204,0.6)';
+  ctx.fillText('— GBP Wilson modes', pL+2, pT+26);
+  ctx.fillStyle='rgba(212,168,67,0.5)';
+  ctx.fillText('H·ψ=γ·ψ  ↔  GBP boundary eigenvalue', pL, pB+16);
+}
+
+// ── VIEW: SNELL ────────────────────────────────────────────────
+function drawSnell(ph) {
+  clearBg();
+  const bx=W*0.44, my=H*0.46;
+
+  // Boundary
+  ctx.strokeStyle='rgba(26,34,56,0.8)'; ctx.lineWidth=1;
+  ctx.setLineDash([5,4]);
+  ctx.beginPath(); ctx.moveTo(bx,10); ctx.lineTo(bx,H-10); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Normal
+  ctx.strokeStyle='rgba(26,34,56,0.6)'; ctx.lineWidth=1;
+  ctx.setLineDash([3,6]);
+  ctx.beginPath(); ctx.moveTo(bx,my-90); ctx.lineTo(bx,my+90); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const iRad=incidentAngle*PI/180;
+  const iLen=Math.min(W*0.3,110);
+
+  // Standard Snell (white)
+  const sExit=Math.asin(Math.sin(iRad)/n2);
+  ctx.beginPath();
+  ctx.moveTo(bx-iLen*Math.cos(iRad), my-iLen*Math.sin(iRad)*0.4);
+  ctx.lineTo(bx,my);
+  ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=2; ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(bx,my);
+  ctx.lineTo(bx+iLen*Math.cos(sExit), my+iLen*Math.sin(sExit)*0.7);
+  ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=2; ctx.stroke();
+
+  ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+  ctx.fillStyle='rgba(255,255,255,0.4)';
+  ctx.fillText(`Snell θ=${(sExit*180/PI).toFixed(1)}°`, bx+iLen*Math.cos(sExit)+4, my+iLen*Math.sin(sExit)*0.7+4);
+
+  // GBP paths
+  const rLen=Math.min(W*0.34,120);
+  PATHS.forEach((p,i)=>{
+    const ed=computeExit(p.sin2,incidentAngle,n2);
+    if (isNaN(ed)) return;
+    const eRad=ed*PI/180;
+    const yOff=(i-3.5)*10;
+    const eY=my+yOff;
+
+    ctx.beginPath();
+    ctx.moveTo(bx-80,eY-24); ctx.lineTo(bx,eY);
+    ctx.strokeStyle=p.color; ctx.lineWidth=1.2; ctx.globalAlpha=0.6; ctx.stroke();
+    ctx.globalAlpha=1;
+
+    const ex=bx+rLen*Math.cos(eRad);
+    const ey=eY+rLen*Math.sin(eRad+(p.sin2-0.5)*0.5);
+    const tp=(Math.sin(ph+i*0.5)+1)/2;
+    const dx=bx+(ex-bx)*tp, dy=eY+(ey-eY)*tp;
+
+    ctx.beginPath(); ctx.moveTo(bx,eY); ctx.lineTo(ex,ey);
+    ctx.strokeStyle=p.color; ctx.lineWidth=selectedPath===i?2.5:1.8;
+    ctx.globalAlpha=selectedPath===i?1:0.8; ctx.stroke(); ctx.globalAlpha=1;
+
+    ctx.beginPath(); ctx.arc(dx,dy,selectedPath===i?4:2.5,0,2*PI);
+    ctx.fillStyle=p.color; ctx.fill();
+
+    if (selectedPath===i) {
+      ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+      ctx.fillStyle=p.color;
+      ctx.fillText(`r=${p.r} ${ed.toFixed(1)}°`, ex+4,ey+4);
+    }
+  });
+
+  ctx.font=`${Math.max(9,W*0.022)}px VT323`;
+  ctx.fillStyle='rgba(212,168,67,0.55)';
+  ctx.fillText('GBP: 8 paths, each derived', 10, H-20);
+  ctx.fillStyle='rgba(42,56,80,0.9)';
+  ctx.fillText('standard Snell: 1 path, n fitted', 10, H-6);
+}
+
+// ── Controls ───────────────────────────────────────────────────
+function setAngle(v) {
+  incidentAngle=v;
+  document.getElementById('vAngle').textContent=v+'°';
+  if (!animating) render();
+}
+function setN2(v) {
+  n2=v;
+  document.getElementById('vN2').textContent=v.toFixed(2);
+  if (!animating) render();
+}
+function setView(v) {
+  viewMode=v;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  event.target.classList.add('active');
+
+  const infos = {
+    prism:    '<b>Prism split</b> · 8 Wilson loop paths · gap(n)=cos²(π/30)−4n/(1+n)² · tap path below',
+    spectrum: '<b>Spectrum bars</b> · mirror pairs = photon L=R self-duality · gaps = forbidden modes',
+    riemann:  '<b>Riemann zeros</b> · GBP modes map to critical line · zeros select surviving paths',
+    snell:    '<b>GBP vs Snell</b> · white = standard (1 ray) · colored = GBP (8 derived rays)'
+  };
+  document.getElementById('infoBar').innerHTML = infos[v];
+  if (!animating) render();
+}
+function toggleAnim() {
+  animating=!animating;
+  const btn=document.getElementById('animBtn');
+  btn.textContent=animating?'⏸ PAUSE':'▶ PLAY';
+  btn.classList.toggle('on',animating);
+  if (animating) loop();
+}
+function loop() {
+  if (!animating) return;
+  animT+=0.02; phase=animT;
+  render();
+  requestAnimationFrame(loop);
+}
+function render() {
+  if (!W||!H) return;
+  switch(viewMode) {
+    case 'prism':    drawPrism(phase); break;
+    case 'spectrum': drawSpectrum(phase); break;
+    case 'riemann':  drawRiemann(phase); break;
+    case 'snell':    drawSnell(phase); break;
+  }
+}
+
+buildGrid();
+resize();
+</script>
+</body>
+</html>
